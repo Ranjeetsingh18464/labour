@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import {
   FaUser, FaMapMarkerAlt, FaBriefcase, FaCogs, FaCamera,
@@ -24,7 +25,7 @@ import { createLabour } from '../../services/labourService';
 import { uploadImage } from '../../services/uploadService';
 import {
   GENDER_OPTIONS, EXPERIENCE_OPTIONS, WORK_TYPES, LANGUAGES,
-  SKILLS, INDIAN_STATES, CITY_OPTIONS,
+  SKILLS, INDIAN_STATES,
 } from '../../utils/constants';
 
 const slideVariants = {
@@ -32,20 +33,6 @@ const slideVariants = {
   center: { x: 0, opacity: 1 },
   exit: (direction) => ({ x: direction > 0 ? -300 : 300, opacity: 0 }),
 };
-
-const AREA_OPTIONS = [
-  { value: '', label: 'Select Area' },
-  { value: 'sector-14', label: 'Sector 14' },
-  { value: 'sector-15', label: 'Sector 15' },
-  { value: 'dlf-phase-1', label: 'DLF Phase 1' },
-  { value: 'mg-road', label: 'MG Road' },
-  { value: 'indiranagar', label: 'Indiranagar' },
-  { value: 'koramangala', label: 'Koramangala' },
-  { value: 'whitefield', label: 'Whitefield' },
-  { value: 'jayanagar', label: 'Jayanagar' },
-  { value: 'btm-layout', label: 'BTM Layout' },
-  { value: 'hsr-layout', label: 'HSR Layout' },
-];
 
 const WORK_TYPE_OPTIONS = [
   { value: 'full-time', label: 'Full Time' },
@@ -202,15 +189,82 @@ function PersonalDetails({ register, errors, setValue, watch }) {
   );
 }
 
-function AddressStep({ register, errors, setValue, watch }) {
-  const [adding, setAdding] = useState(null);
+function AddableInput({ label, name, placeholder, required, register, error, icon: Icon, options, onAdd, listId }) {
+  return (
+    <div className="relative">
+      <Input
+        label={label}
+        name={name}
+        placeholder={placeholder}
+        required={required}
+        list={listId}
+        {...register(name, { required: required ? `${label} is required` : false })}
+        error={error?.message}
+        icon={Icon}
+      />
+      <datalist id={listId}>
+        {options.map((opt) => (
+          <option key={opt} value={opt} />
+        ))}
+      </datalist>
+      <button
+        type="button"
+        onClick={() => onAdd()}
+        className="absolute right-2 top-[38px] p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+        title={`Add ${label.toLowerCase()}`}
+      >
+        <FaPlus size={14} />
+      </button>
+    </div>
+  );
+}
+
+function AddressStep({ register, errors, watch, setValue }) {
+  const { data: cityList = [] } = useQuery({
+    queryKey: ['cities'],
+    queryFn: async () => {
+      const q = query(collection(db, 'cities'), orderBy('name', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => d.data().name).filter(Boolean);
+    },
+  });
+
+  const { data: areaList = [] } = useQuery({
+    queryKey: ['areas'],
+    queryFn: async () => {
+      const q = query(collection(db, 'areas'), orderBy('name', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => d.data().name).filter(Boolean);
+    },
+  });
+
+  const { data: districtList = [] } = useQuery({
+    queryKey: ['districts'],
+    queryFn: async () => {
+      const q = query(collection(db, 'districts'), orderBy('name', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => d.data().name).filter(Boolean);
+    },
+  });
+
+  const { data: stateList = [] } = useQuery({
+    queryKey: ['states'],
+    queryFn: async () => {
+      const q = query(collection(db, 'states'), orderBy('name', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => d.data().name).filter(Boolean);
+    },
+  });
+
+  const allStates = [...new Set([...INDIAN_STATES, ...stateList])];
 
   const handleAdd = async (field, value) => {
     if (!value || !value.trim()) return;
-    const col = field === 'city' ? 'cities' : 'areas';
+    const colMap = { area: 'areas', city: 'cities', district: 'districts', state: 'states' };
+    const col = colMap[field];
     try {
       await addDoc(collection(db, col), { name: value.trim(), status: 'active' });
-      toast.success(`${field === 'city' ? 'City' : 'Area'} added`);
+      toast.success(`${field.charAt(0).toUpperCase() + field.slice(1)} added`);
     } catch {
       toast.error(`Failed to add ${field}`);
     }
@@ -225,37 +279,30 @@ function AddressStep({ register, errors, setValue, watch }) {
         {...register('street')} icon={FaRoad} />
       <Input label="Landmark" name="landmark" placeholder="Nearby landmark"
         {...register('landmark')} icon={FaMapPin} />
-      <div className="relative">
-        <Input label="Area" name="area" placeholder="Enter area name" required
-          {...register('area', { required: 'Area is required' })}
-          error={errors.area?.message} />
-        <button
-          type="button"
-          onClick={() => { handleAdd('area', watch('area')); }}
-          className="absolute right-2 top-[38px] p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          title="Add area"
-        >
-          <FaPlus size={14} />
-        </button>
-      </div>
-      <div className="relative">
-        <Input label="City" name="city" placeholder="Enter city name" required
-          {...register('city', { required: 'City is required' })}
-          error={errors.city?.message} />
-        <button
-          type="button"
-          onClick={() => { handleAdd('city', watch('city')); }}
-          className="absolute right-2 top-[38px] p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          title="Add city"
-        >
-          <FaPlus size={14} />
-        </button>
-      </div>
-      <Input label="District" name="district" placeholder="District"
-        {...register('district')} icon={FaCity} />
-      <Select label="State" name="state" options={[{ value: '', label: 'Select State' }, ...INDIAN_STATES.map(s => ({ value: s, label: s }))]} required
-        {...register('state', { required: 'State is required' })}
-        error={errors.state?.message} />
+      <AddableInput
+        label="Area" name="area" placeholder="Enter area name" required
+        register={register} error={errors.area} icon={FaMapMarkerAlt}
+        options={areaList} listId="area-list"
+        onAdd={() => handleAdd('area', watch('area'))}
+      />
+      <AddableInput
+        label="City" name="city" placeholder="Enter city name" required
+        register={register} error={errors.city} icon={FaCity}
+        options={cityList} listId="city-list"
+        onAdd={() => handleAdd('city', watch('city'))}
+      />
+      <AddableInput
+        label="District" name="district" placeholder="Enter district name"
+        register={register} error={errors.district} icon={FaGlobe}
+        options={districtList} listId="district-list"
+        onAdd={() => handleAdd('district', watch('district'))}
+      />
+      <AddableInput
+        label="State" name="state" placeholder="Enter state name" required
+        register={register} error={errors.state} icon={FaGlobe}
+        options={allStates} listId="state-list"
+        onAdd={() => handleAdd('state', watch('state'))}
+      />
       <Input label="PIN Code" name="pincode" placeholder="6-digit PIN" required
         {...register('pincode', {
           required: 'PIN code is required',
