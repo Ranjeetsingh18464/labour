@@ -21,6 +21,7 @@ const LabourRegistration = lazy(() => import('./pages/public/LabourRegistration'
 const Categories = lazy(() => import('./pages/public/Categories'));
 const CategoryDetail = lazy(() => import('./pages/public/CategoryDetail'));
 const BookingPage = lazy(() => import('./pages/public/BookingPage'));
+const LabourDashboard = lazy(() => import('./pages/labour/LabourDashboard'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ManageLabours = lazy(() => import('./pages/admin/ManageLabours'));
@@ -82,11 +83,20 @@ function DashboardRedirect() {
   if (userData?.role === 'admin' || userData?.role === 'super-admin') {
     return <Navigate to="/admin" replace />;
   }
+  if (userData?.role === 'labour') {
+    return (
+      <PublicLayout>
+        <Suspense fallback={<PageLoader />}>
+          <PageWrapper><LabourDashboard /></PageWrapper>
+        </Suspense>
+      </PublicLayout>
+    );
+  }
   return (
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold">My Dashboard</h1>
-        <p className="text-gray-500 mt-2">Dashboard coming soon for customers and labour accounts.</p>
+        <p className="text-gray-500 mt-2">Dashboard coming soon for customers.</p>
       </div>
     </PublicLayout>
   );
