@@ -1,9 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaSpinner } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+
+const ADMIN_ROLES = ['admin', 'super-admin'];
 
 export default function ProtectedRoute({ children, requiredRole }) {
-  const { user, loading } = { user: null, loading: false };
+  const { user, userData, loading } = useAuth();
 
   if (loading) {
     return (
@@ -26,7 +29,11 @@ export default function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole === 'admin' && !ADMIN_ROLES.includes(userData?.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredRole && requiredRole !== 'admin' && userData?.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 

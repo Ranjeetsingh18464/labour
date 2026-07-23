@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
     sendOTP,
     verifyOTP,
     resetPassword,
-    isAdmin: userData?.role === 'admin',
+    isAdmin: userData?.role === 'admin' || userData?.role === 'super-admin',
     isLabour: userData?.role === 'labour',
     isCustomer: userData?.role === 'customer' || !userData?.role,
   };
