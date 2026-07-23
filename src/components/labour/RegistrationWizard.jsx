@@ -798,36 +798,18 @@ export default function RegistrationWizard() {
     });
   };
 
-  const uploadFile = async (file, path) => {
+  const uploadFile = async (file, path, timeoutMs = 15000) => {
     if (!file) return null;
     const compressed = await compressImage(file);
-    const result = await uploadImage(compressed, path);
-    return result.url;
+    const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('Upload timed out')), timeoutMs));
+    const upload = uploadImage(compressed, path).then((r) => r.url);
+    return Promise.race([upload, timer]);
   };
 
   const onSubmit = async (data) => {
     setUploading(true);
     try {
-      const filePath = `labours/${user.uid}`;
-
-      toast.loading('Uploading photos...', { id: 'upload-status' });
-
-      const [profilePhoto, aadhaarFront, aadhaarBack, experienceCert] = await Promise.all([
-        uploadFile(files.profilePhoto, `${filePath}/profile.jpg`),
-        uploadFile(files.aadhaarFront, `${filePath}/aadhaar-front.jpg`),
-        uploadFile(files.aadhaarBack, `${filePath}/aadhaar-back.jpg`),
-        uploadFile(files.experienceCert, `${filePath}/experience-cert.pdf`),
-      ]);
-
       toast.loading('Saving profile...', { id: 'upload-status' });
-
-      let additionalPhotoUrls = [];
-      if (files.additionalPhotos?.length > 0) {
-        const uploads = await Promise.all(
-          files.additionalPhotos.map((f, i) => uploadFile(f, `${filePath}/additional-${i}.jpg`))
-        );
-        additionalPhotoUrls = uploads.filter(Boolean);
-      }
 
       const labourData = {
         userId: user.uid,
@@ -862,11 +844,11 @@ export default function RegistrationWizard() {
         skills: data.skills,
         aboutMe: data.aboutMe,
         references: data.references,
-        photo: profilePhoto,
-        aadhaarFront: aadhaarFront,
-        aadhaarBack: aadhaarBack,
-        experienceCert: experienceCert,
-        additionalPhotos: additionalPhotoUrls,
+        photo: '',
+        aadhaarFront: '',
+        aadhaarBack: '',
+        experienceCert: '',
+        additionalPhotos: [],
         labourId: '',
         verified: false,
         available: true,
@@ -876,9 +858,37 @@ export default function RegistrationWizard() {
       const created = await createLabour(labourData);
       const labourId = `LAB-${data.city?.substring(0, 3).toUpperCase() || 'XXX'}-${data.area?.substring(0, 3).toUpperCase() || 'XXX'}-${String(created.id).slice(-4).toUpperCase()}`;
 
-      await import('../../services/labourService').then(({ updateLabour }) =>
-        updateLabour(created.id, { labourId })
-      );
+      const { updateLabour } = await import('../../services/labourService');
+      await updateLabour(created.id, { labourId });
+
+      toast.loading('Uploading photos...', { id: 'upload-status' });
+
+      const filePath = `labours/${user.uid}`;
+      const uploadPromises = [
+        uploadFile(files.profilePhoto, `${filePath}/profile.jpg`).catch(() => null),
+        uploadFile(files.aadhaarFront, `${filePath}/aadhaar-front.jpg`).catch(() => null),
+        uploadFile(files.aadhaarBack, `${filePath}/aadhaar-back.jpg`).catch(() => null),
+        uploadFile(files.experienceCert, `${filePath}/experience-cert.pdf`).catch(() => null),
+      ];
+
+      if (files.additionalPhotos?.length > 0) {
+        files.additionalPhotos.forEach((f, i) => {
+          uploadPromises.push(
+            uploadFile(f, `${filePath}/additional-${i}.jpg`).catch(() => null)
+          );
+        });
+      }
+
+      const urls = await Promise.all(uploadPromises);
+      const [photo, aadhaarFront, aadhaarBack, experienceCert, ...additionalPhotos] = urls;
+
+      updateLabour(created.id, {
+        photo: photo || '',
+        aadhaarFront: aadhaarFront || '',
+        aadhaarBack: aadhaarBack || '',
+        experienceCert: experienceCert || '',
+        additionalPhotos: additionalPhotos.filter(Boolean),
+      }).catch(() => {});
 
       toast.success('Registration submitted successfully!', { id: 'upload-status' });
       navigate('/labour/profile');
