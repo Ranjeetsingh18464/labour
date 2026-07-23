@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FaTachometerAlt, FaUsers, FaThLarge, FaCity, FaCalendarCheck, FaStar, FaImages, FaChartBar, FaCog, FaBars, FaTimes, FaBell, FaMoon, FaSun, FaChevronDown, FaSearch } from 'react-icons/fa';
 import { HiHome } from 'react-icons/hi';
 
@@ -16,14 +16,16 @@ const sidebarLinks = [
   { name: 'Settings', path: '/admin/settings', icon: FaCog },
 ];
 
-const sidebarVariants = {
-  open: { x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  closed: { x: '-100%', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-};
-
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleDark = () => {
     setDarkMode(!darkMode);
@@ -37,39 +39,47 @@ export default function AdminLayout({ children }) {
         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
     }`;
 
+  const showSidebar = isDesktop || sidebarOpen;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          />
-        )}
-      </AnimatePresence>
+      {!isDesktop && (
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            />
+          )}
+        </AnimatePresence>
+      )}
 
-      <motion.aside
-        variants={sidebarVariants}
-        initial="closed"
-        animate={sidebarOpen ? 'open' : 'closed'}
-        className="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col lg:translate-x-0"
+      <aside
+        className={`
+          ${isDesktop ? 'lg:translate-x-0' : ''}
+          fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col
+          transition-transform duration-300 ease-in-out
+          ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <NavLink to="/admin" className="flex items-center gap-2 text-lg font-bold text-blue-600 dark:text-blue-400">
             <FaTachometerAlt className="text-xl" />
             <span>Admin Panel</span>
           </NavLink>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
-            <FaTimes className="text-lg" />
-          </button>
+          {!isDesktop && (
+            <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <FaTimes className="text-lg" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {sidebarLinks.map((link) => (
-            <NavLink key={link.path} to={link.path} end={link.end} className={linkClass} onClick={() => setSidebarOpen(false)}>
+            <NavLink key={link.path} to={link.path} end={link.end} className={linkClass} onClick={() => !isDesktop && setSidebarOpen(false)}>
               <link.icon className="text-base" />
               {link.name}
             </NavLink>
@@ -82,7 +92,7 @@ export default function AdminLayout({ children }) {
             Back to Site
           </NavLink>
         </div>
-      </motion.aside>
+      </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-16 flex items-center px-4 gap-4">
