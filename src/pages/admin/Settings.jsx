@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaCog, FaPhone, FaBell, FaFire, FaChevronDown, FaChevronUp,
-  FaSave, FaGlobe, FaKey,
+  FaSave, FaGlobe, FaKey, FaEye, FaEyeSlash,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/AdminLayout';
@@ -69,6 +69,7 @@ export default function Settings() {
   const [expanded, setExpanded] = useState('general');
   const [settings, setSettings] = useState(initialSettings);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false });
 
   const saveMutation = useMutation({
     mutationFn: async ({ sectionId, data }) => {
@@ -212,30 +213,57 @@ export default function Settings() {
                         )}
                         {section.id === 'password' && (
                           <div className="pt-4 space-y-4">
-                            <Input
-                              label="Current Password"
-                              name="currentPassword"
-                              type="password"
-                              value={passwordData.currentPassword}
-                              onChange={(e) => setPasswordData((p) => ({ ...p, currentPassword: e.target.value }))}
-                              placeholder="Enter current password"
-                            />
-                            <Input
-                              label="New Password"
-                              name="newPassword"
-                              type="password"
-                              value={passwordData.newPassword}
-                              onChange={(e) => setPasswordData((p) => ({ ...p, newPassword: e.target.value }))}
-                              placeholder="Enter new password (min 6 characters)"
-                            />
-                            <Input
-                              label="Confirm New Password"
-                              name="confirmPassword"
-                              type="password"
-                              value={passwordData.confirmPassword}
-                              onChange={(e) => setPasswordData((p) => ({ ...p, confirmPassword: e.target.value }))}
-                              placeholder="Confirm new password"
-                            />
+                            <div className="relative">
+                              <Input
+                                label="Current Password"
+                                name="currentPassword"
+                                type={showPw.current ? 'text' : 'password'}
+                                value={passwordData.currentPassword}
+                                onChange={(e) => setPasswordData((p) => ({ ...p, currentPassword: e.target.value }))}
+                                placeholder="Enter current password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPw((p) => ({ ...p, current: !p.current }))}
+                                className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                              >
+                                {showPw.current ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <Input
+                                label="New Password"
+                                name="newPassword"
+                                type={showPw.new ? 'text' : 'password'}
+                                value={passwordData.newPassword}
+                                onChange={(e) => setPasswordData((p) => ({ ...p, newPassword: e.target.value }))}
+                                placeholder="Enter new password (min 6 characters)"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPw((p) => ({ ...p, new: !p.new }))}
+                                className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                              >
+                                {showPw.new ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <Input
+                                label="Confirm New Password"
+                                name="confirmPassword"
+                                type={showPw.confirm ? 'text' : 'password'}
+                                value={passwordData.confirmPassword}
+                                onChange={(e) => setPasswordData((p) => ({ ...p, confirmPassword: e.target.value }))}
+                                placeholder="Confirm new password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPw((p) => ({ ...p, confirm: !p.confirm }))}
+                                className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                              >
+                                {showPw.confirm ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
                           </div>
                         )}
                         {section.id !== 'password' && (
