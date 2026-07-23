@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTachometerAlt, FaUsers, FaThLarge, FaCity, FaCalendarCheck, FaStar, FaImages, FaChartBar, FaCog, FaBars, FaTimes, FaBell, FaMoon, FaSun, FaChevronDown, FaSearch } from 'react-icons/fa';
 import { HiHome } from 'react-icons/hi';
@@ -21,7 +21,7 @@ const sidebarVariants = {
   closed: { x: '-100%', transition: { type: 'spring', stiffness: 300, damping: 30 } },
 };
 
-export default function AdminLayout() {
+export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -127,7 +127,7 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
