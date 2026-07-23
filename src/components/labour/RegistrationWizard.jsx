@@ -861,27 +861,19 @@ export default function RegistrationWizard() {
       const { updateLabour } = await import('../../services/labourService');
       await updateLabour(created.id, { labourId });
 
-      toast.loading('Uploading photos...', { id: 'upload-status' });
+      toast.success('Registration submitted successfully!', { id: 'upload-status' });
+      navigate('/labour/profile');
 
       const filePath = `labours/${user.uid}`;
-      const uploadPromises = [
-        uploadFile(files.profilePhoto, `${filePath}/profile.jpg`).catch(() => null),
-        uploadFile(files.aadhaarFront, `${filePath}/aadhaar-front.jpg`).catch(() => null),
-        uploadFile(files.aadhaarBack, `${filePath}/aadhaar-back.jpg`).catch(() => null),
-        uploadFile(files.experienceCert, `${filePath}/experience-cert.pdf`).catch(() => null),
-      ];
-
-      if (files.additionalPhotos?.length > 0) {
-        files.additionalPhotos.forEach((f, i) => {
-          uploadPromises.push(
-            uploadFile(f, `${filePath}/additional-${i}.jpg`).catch(() => null)
-          );
-        });
-      }
-
-      const urls = await Promise.all(uploadPromises);
-      const [photo, aadhaarFront, aadhaarBack, experienceCert, ...additionalPhotos] = urls;
-
+      const doUpload = async (file, path) => { try { return await uploadFile(file, path); } catch { return null; } };
+      const photos = await Promise.all([
+        doUpload(files.profilePhoto, `${filePath}/profile.jpg`),
+        doUpload(files.aadhaarFront, `${filePath}/aadhaar-front.jpg`),
+        doUpload(files.aadhaarBack, `${filePath}/aadhaar-back.jpg`),
+        doUpload(files.experienceCert, `${filePath}/experience-cert.pdf`),
+        ...(files.additionalPhotos || []).map((f, i) => doUpload(f, `${filePath}/additional-${i}.jpg`)),
+      ]);
+      const [photo, aadhaarFront, aadhaarBack, experienceCert, ...additionalPhotos] = photos;
       updateLabour(created.id, {
         photo: photo || '',
         aadhaarFront: aadhaarFront || '',
@@ -889,9 +881,6 @@ export default function RegistrationWizard() {
         experienceCert: experienceCert || '',
         additionalPhotos: additionalPhotos.filter(Boolean),
       }).catch(() => {});
-
-      toast.success('Registration submitted successfully!', { id: 'upload-status' });
-      navigate('/labour/profile');
     } catch (error) {
       toast.error(error.message || 'Registration failed. Please try again.', { id: 'upload-status' });
     } finally {
