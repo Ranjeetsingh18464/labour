@@ -1,11 +1,9 @@
-export default function Input({
-  label,
-  error,
-  icon: Icon,
-  required = false,
-  className = '',
-  ...props
-}) {
+import { forwardRef } from 'react';
+
+const Input = forwardRef(function Input(
+  { label, error, icon: Icon, required = false, className = '', ...props },
+  ref
+) {
   return (
     <div className={`w-full ${className}`}>
       {label && (
@@ -24,6 +22,7 @@ export default function Input({
           </div>
         )}
         <input
+          ref={ref}
           required={required}
           {...props}
           className={`
@@ -42,4 +41,6 @@ export default function Input({
       )}
     </div>
   );
-}
+});
+
+export default Input;

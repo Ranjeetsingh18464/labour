@@ -1,14 +1,10 @@
+import { forwardRef } from 'react';
 import { HiChevronDown } from 'react-icons/hi';
 
-export default function Select({
-  label,
-  options = [],
-  error,
-  placeholder = 'Select an option',
-  required = false,
-  className = '',
-  ...props
-}) {
+const Select = forwardRef(function Select(
+  { label, options = [], error, placeholder = 'Select an option', required = false, className = '', ...props },
+  ref
+) {
   return (
     <div className={`w-full ${className}`}>
       {label && (
@@ -21,26 +17,17 @@ export default function Select({
         </label>
       )}
       <div className="relative">
-        <select
-          required={required}
-          {...props}
-          className={`
-            w-full rounded-lg border bg-white px-3 py-2 pr-10 text-sm text-gray-900
-            appearance-none transition-colors duration-200
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600
-            dark:focus:ring-blue-400
-            ${error ? 'border-red-500 focus:ring-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'}
-          `}
-        >
-          <option value="" disabled>
-            {placeholder}
-          </option>
+        <select ref={ref} required={required} {...props} className={`
+          w-full rounded-lg border bg-white px-3 py-2 pr-10 text-sm text-gray-900
+          appearance-none transition-colors duration-200
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600
+          dark:focus:ring-blue-400
+          ${error ? 'border-red-500 focus:ring-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'}
+        `}>
+          <option value="" disabled>{placeholder}</option>
           {options.map((opt) => (
-            <option
-              key={typeof opt === 'object' ? opt.value : opt}
-              value={typeof opt === 'object' ? opt.value : opt}
-            >
+            <option key={typeof opt === 'object' ? opt.value : opt} value={typeof opt === 'object' ? opt.value : opt}>
               {typeof opt === 'object' ? opt.label : opt}
             </option>
           ))}
@@ -49,9 +36,9 @@ export default function Select({
           <HiChevronDown className="text-gray-400 dark:text-gray-500" size={18} />
         </div>
       </div>
-      {error && (
-        <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
     </div>
   );
-}
+});
+
+export default Select;

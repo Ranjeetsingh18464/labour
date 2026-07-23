@@ -1,11 +1,9 @@
-export default function TextArea({
-  label,
-  error,
-  rows = 4,
-  required = false,
-  className = '',
-  ...props
-}) {
+import { forwardRef } from 'react';
+
+const TextArea = forwardRef(function TextArea(
+  { label, error, rows = 4, required = false, className = '', ...props },
+  ref
+) {
   return (
     <div className={`w-full ${className}`}>
       {label && (
@@ -18,6 +16,7 @@ export default function TextArea({
         </label>
       )}
       <textarea
+        ref={ref}
         rows={rows}
         required={required}
         {...props}
@@ -30,9 +29,9 @@ export default function TextArea({
           ${error ? 'border-red-500 focus:ring-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'}
         `}
       />
-      {error && (
-        <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
     </div>
   );
-}
+});
+
+export default TextArea;
