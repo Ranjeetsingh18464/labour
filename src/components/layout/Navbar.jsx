@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaBars, FaTimes, FaSearch, FaMoon, FaSun, FaChevronDown, FaUser, FaTachometerAlt, FaSignOutAlt, FaHammer } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSearch, FaMoon, FaSun, FaChevronDown, FaUser, FaTachometerAlt, FaSignOutAlt, FaHammer, FaUserCircle } from 'react-icons/fa';
 import { HiHome, HiInformationCircle, HiPhone, HiCollection } from 'react-icons/hi';
 
 const navLinks = [
@@ -162,9 +162,15 @@ export default function Navbar() {
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayUser?.displayName || displayUser?.name || 'User'}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">{displayUser?.email || ''}</p>
                           </div>
-                          <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
-                            <FaUser className="text-gray-400" /> Profile
-                          </Link>
+                          {displayUser?.role === 'labour' ? (
+                            <Link to="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
+                              <FaUserCircle className="text-gray-400" /> My Profile
+                            </Link>
+                          ) : (
+                            <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
+                              <FaUser className="text-gray-400" /> Profile
+                            </Link>
+                          )}
                           <Link to={displayUser?.role === 'admin' || displayUser?.role === 'super-admin' ? '/admin' : '/dashboard'} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
                             <FaTachometerAlt className="text-gray-400" /> Dashboard
                           </Link>
@@ -242,9 +248,15 @@ export default function Navbar() {
 
                 {isLoggedIn ? (
                   <div className="space-y-1">
-                    <NavLink to="/profile" className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
-                      <FaUser className="text-lg" /> Profile
-                    </NavLink>
+                    {displayUser?.role === 'labour' ? (
+                      <NavLink to="/dashboard" className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
+                        <FaUserCircle className="text-lg" /> My Profile
+                      </NavLink>
+                    ) : (
+                      <NavLink to="/profile" className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
+                        <FaUser className="text-lg" /> Profile
+                      </NavLink>
+                    )}
                     <NavLink to={displayUser?.role === 'admin' || displayUser?.role === 'super-admin' ? '/admin' : '/dashboard'} className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
                       <FaTachometerAlt className="text-lg" /> Dashboard
                     </NavLink>

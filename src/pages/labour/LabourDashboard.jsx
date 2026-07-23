@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -15,8 +16,14 @@ const statusConfig = {
   suspended: { label: 'Suspended', color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20', badge: 'danger' },
 };
 
+const tabs = [
+  { id: 'dashboard', label: 'Dashboard', icon: FaCalendarCheck },
+  { id: 'profile', label: 'My Profile', icon: FaUserTie },
+];
+
 export default function LabourDashboard() {
   const { user, userData } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const { data: labour, isLoading: labourLoading } = useQuery({
     queryKey: ['labour', 'user', user?.uid],
@@ -78,10 +85,34 @@ export default function LabourDashboard() {
   const status = labour.status || 'pending';
   const config = statusConfig[status] || statusConfig.pending;
 
+  const profileFields = [
+    { label: 'Full Name', value: labour.name },
+    { label: "Father's Name", value: labour.fatherName },
+    { label: 'Mobile', value: labour.mobile },
+    { label: 'WhatsApp', value: labour.whatsapp },
+    { label: 'Email', value: labour.email },
+    { label: 'Gender', value: labour.gender },
+    { label: 'Date of Birth', value: labour.dob },
+    { label: 'Aadhaar', value: labour.aadhaar ? labour.aadhaar.replace(/\d{4}(?=\d)/g, '••••') : '' },
+    { label: 'PAN', value: labour.pan },
+    { label: 'Address', value: [labour.houseNo, labour.street, labour.landmark, labour.area, labour.city, labour.district, labour.state, labour.pincode].filter(Boolean).join(', ') },
+    { label: 'Category', value: labour.category },
+    { label: 'Subcategory', value: labour.subcategory },
+    { label: 'Experience', value: labour.experience },
+    { label: 'Daily Wage', value: labour.dailyCharges ? `₹${labour.dailyCharges}` : '' },
+    { label: 'Monthly Salary', value: labour.monthlyCharges ? `₹${labour.monthlyCharges}` : '' },
+    { label: 'Work Types', value: labour.workTypes?.join(', ') },
+    { label: 'Availability', value: labour.availability },
+    { label: 'Working Hours', value: labour.workingHours },
+    { label: 'Languages', value: labour.languages?.join(', ') },
+    { label: 'Skills', value: labour.skills?.join(', ') },
+    { label: 'About', value: labour.aboutMe },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
               {labour.photo ? (
@@ -108,152 +139,187 @@ export default function LabourDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card padding="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                <FaCalendarCheck size={20} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{bookings.length}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Bookings</p>
-              </div>
-            </div>
-          </Card>
-          <Card padding="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
-                <FaStar size={20} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ratingData?.averageRating?.toFixed(1) || '0.0'}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{ratingData?.totalReviews || 0} Reviews</p>
-              </div>
-            </div>
-          </Card>
-          <Card padding="p-5">
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl ${config.bg} ${config.color}`}>
-                <FaShieldAlt size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{config.label}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-              </div>
-            </div>
-          </Card>
-          <Card padding="p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                <FaMoneyBillWave size={20} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">₹{labour.dailyCharges || 0}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{labour.monthlyCharges ? `₹${labour.monthlyCharges}/mo` : 'Per Day'}</p>
-              </div>
-            </div>
-          </Card>
+        <div className="flex gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === t.id
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Icon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
-            <Card padding="p-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <FaCalendarCheck /> Recent Bookings
-              </h2>
-              {bookings.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">
-                  <FaCalendarCheck size={32} className="mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No bookings yet</p>
+        {activeTab === 'dashboard' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card padding="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    <FaCalendarCheck size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{bookings.length}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Bookings</p>
+                  </div>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                        <th className="pb-2 pr-3">Customer</th>
-                        <th className="pb-2 pr-3">Date</th>
-                        <th className="pb-2 pr-3">Amount</th>
-                        <th className="pb-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bookings.map((b) => (
-                        <tr key={b.id} className="border-b border-gray-100 dark:border-gray-800">
-                          <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">{b.userName || 'N/A'}</td>
-                          <td className="py-3 pr-3 text-gray-500">{b.serviceDate || '-'}</td>
-                          <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">₹{b.dailyCharges || b.monthlyCharges || 0}</td>
-                          <td className="py-3">
-                            <Badge variant={b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}>
-                              {b.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              </Card>
+              <Card padding="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
+                    <FaStar size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ratingData?.averageRating?.toFixed(1) || '0.0'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{ratingData?.totalReviews || 0} Reviews</p>
+                  </div>
                 </div>
-              )}
-            </Card>
-          </div>
+              </Card>
+              <Card padding="p-5">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-xl ${config.bg} ${config.color}`}>
+                    <FaShieldAlt size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{config.label}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                  </div>
+                </div>
+              </Card>
+              <Card padding="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                    <FaMoneyBillWave size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">₹{labour.dailyCharges || 0}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{labour.monthlyCharges ? `₹${labour.monthlyCharges}/mo` : 'Per Day'}</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
 
-          <div>
-            <Card padding="p-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <FaEdit /> Quick Actions
-              </h2>
-              <div className="space-y-3">
-                <Link
-                  to={`/labour/${labourId}`}
-                  className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <FaExternalLinkAlt className="text-blue-500" size={14} />
-                  View Public Profile
-                </Link>
-                <Link
-                  to="/labour/register"
-                  className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <FaEdit className="text-green-500" size={14} />
-                  Edit Profile
-                </Link>
-                <Link
-                  to="/"
-                  className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <FaCalendarCheck className="text-purple-500" size={14} />
-                  Browse Jobs
-                </Link>
-              </div>
-            </Card>
-
-            <Card padding="p-5" className="mt-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <FaStar /> Recent Reviews
-              </h2>
-              {reviews.length === 0 ? (
-                <div className="text-center py-6 text-gray-400">
-                  <FaStar size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No reviews yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {reviews.slice(0, 3).map((r) => (
-                    <div key={r.id} className="pb-3 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{r.userName || 'Anonymous'}</span>
-                        <span className="text-xs text-yellow-500 flex items-center gap-1">
-                          <FaStar size={12} /> {r.rating}
-                        </span>
-                      </div>
-                      {r.comment && <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{r.comment}</p>}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2">
+                <Card padding="p-5">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <FaCalendarCheck /> Recent Bookings
+                  </h2>
+                  {bookings.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">
+                      <FaCalendarCheck size={32} className="mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">No bookings yet</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            <th className="pb-2 pr-3">Customer</th>
+                            <th className="pb-2 pr-3">Date</th>
+                            <th className="pb-2 pr-3">Amount</th>
+                            <th className="pb-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bookings.map((b) => (
+                            <tr key={b.id} className="border-b border-gray-100 dark:border-gray-800">
+                              <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">{b.userName || 'N/A'}</td>
+                              <td className="py-3 pr-3 text-gray-500">{b.serviceDate || '-'}</td>
+                              <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">₹{b.dailyCharges || b.monthlyCharges || 0}</td>
+                              <td className="py-3">
+                                <Badge variant={b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}>
+                                  {b.status}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              <div>
+                <Card padding="p-5">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <FaEdit /> Quick Actions
+                  </h2>
+                  <div className="space-y-3">
+                    <Link
+                      to={`/labour/${labourId}`}
+                      className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FaExternalLinkAlt className="text-blue-500" size={14} />
+                      View Public Profile
+                    </Link>
+                    <Link
+                      to="/labour/register"
+                      className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FaEdit className="text-green-500" size={14} />
+                      Edit Profile
+                    </Link>
+                    <Link
+                      to="/"
+                      className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FaCalendarCheck className="text-purple-500" size={14} />
+                      Browse Jobs
+                    </Link>
+                  </div>
+                </Card>
+
+                <Card padding="p-5" className="mt-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <FaStar /> Recent Reviews
+                  </h2>
+                  {reviews.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400">
+                      <FaStar size={24} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No reviews yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reviews.slice(0, 3).map((r) => (
+                        <div key={r.id} className="pb-3 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{r.userName || 'Anonymous'}</span>
+                            <span className="text-xs text-yellow-500 flex items-center gap-1">
+                              <FaStar size={12} /> {r.rating}
+                            </span>
+                          </div>
+                          {r.comment && <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{r.comment}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {profileFields.filter((f) => f.value).map((f) => (
+              <Card key={f.label} padding="p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{f.label}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{f.value}</p>
+              </Card>
+            ))}
           </div>
-        </div>
+        )}
       </motion.div>
     </div>
   );
