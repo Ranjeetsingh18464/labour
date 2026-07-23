@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FaCog, FaPhone, FaSearch, FaBell, FaFire, FaChevronDown, FaChevronUp,
-  FaSave, FaGlobe, FaEnvelope, FaWhatsapp, FaKey, FaMapMarkerAlt,
+  FaCog, FaPhone, FaBell, FaFire, FaChevronDown, FaChevronUp,
+  FaSave, FaGlobe, FaKey,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { Card, Button, Input, TextArea } from '../../components/ui';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { changePassword } from '../../services/authService';
 
 const sections = [
   { id: 'general', label: 'General Settings', icon: FaCog },
@@ -17,6 +18,7 @@ const sections = [
   { id: 'seo', label: 'SEO Settings', icon: FaGlobe },
   { id: 'notifications', label: 'Notification Settings', icon: FaBell },
   { id: 'firebase', label: 'Firebase Settings', icon: FaFire },
+  { id: 'password', label: 'Change Password', icon: FaKey },
 ];
 
 const generalFields = [
@@ -66,6 +68,7 @@ const initialSettings = {
 export default function Settings() {
   const [expanded, setExpanded] = useState('general');
   const [settings, setSettings] = useState(initialSettings);
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
   const saveMutation = useMutation({
     mutationFn: async ({ sectionId, data }) => {
@@ -73,6 +76,23 @@ export default function Settings() {
       await setDoc(ref, data, { merge: true });
     },
     onSuccess: () => toast.success('Settings saved successfully'),
+    onError: (err) => toast.error(err.message),
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async () => {
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+      if (passwordData.newPassword.length < 6) {
+        throw new Error('New password must be at least 6 characters');
+      }
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+    },
+    onSuccess: () => {
+      toast.success('Password changed successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -190,16 +210,58 @@ export default function Settings() {
                             {firebaseFields.map((f) => renderField(f, 'firebase'))}
                           </div>
                         )}
-                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                          <Button
-                            size="sm"
-                            icon={FaSave}
-                            loading={saveMutation.isPending}
-                            onClick={() => handleSave(section.id)}
-                          >
-                            Save {section.label}
-                          </Button>
-                        </div>
+                        {section.id === 'password' && (
+                          <div className="pt-4 space-y-4">
+                            <Input
+                              label="Current Password"
+                              name="currentPassword"
+                              type="password"
+                              value={passwordData.currentPassword}
+                              onChange={(e) => setPasswordData((p) => ({ ...p, currentPassword: e.target.value }))}
+                              placeholder="Enter current password"
+                            />
+                            <Input
+                              label="New Password"
+                              name="newPassword"
+                              type="password"
+                              value={passwordData.newPassword}
+                              onChange={(e) => setPasswordData((p) => ({ ...p, newPassword: e.target.value }))}
+                              placeholder="Enter new password (min 6 characters)"
+                            />
+                            <Input
+                              label="Confirm New Password"
+                              name="confirmPassword"
+                              type="password"
+                              value={passwordData.confirmPassword}
+                              onChange={(e) => setPasswordData((p) => ({ ...p, confirmPassword: e.target.value }))}
+                              placeholder="Confirm new password"
+                            />
+                          </div>
+                        )}
+                        {section.id !== 'password' && (
+                          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <Button
+                              size="sm"
+                              icon={FaSave}
+                              loading={saveMutation.isPending}
+                              onClick={() => handleSave(section.id)}
+                            >
+                              Save {section.label}
+                            </Button>
+                          </div>
+                        )}
+                        {section.id === 'password' && (
+                          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <Button
+                              size="sm"
+                              icon={FaKey}
+                              loading={passwordMutation.isPending}
+                              onClick={() => passwordMutation.mutate()}
+                            >
+                              Change Password
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}

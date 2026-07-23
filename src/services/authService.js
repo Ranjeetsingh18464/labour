@@ -8,6 +8,9 @@ import {
   PhoneAuthProvider,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
@@ -96,4 +99,26 @@ export const resetPassword = async (email) => {
 
 export const getCurrentUser = () => {
   return auth.currentUser;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      throw new Error('No authenticated user found');
+    }
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+  } catch (error) {
+    const message =
+      error.code === 'auth/wrong-password'
+        ? 'Current password is incorrect'
+        : error.code === 'auth/weak-password'
+        ? 'New password must be at least 6 characters'
+        : error.code === 'auth/too-many-requests'
+        ? 'Too many attempts. Please try again later.'
+        : error.message;
+    throw new Error(message);
+  }
 };
