@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { collection, getDocs, query, where, orderBy, limit as fbLimit } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import { FaBars, FaTimes, FaSearch, FaMoon, FaSun, FaChevronDown, FaUser, FaTachometerAlt, FaSignOutAlt, FaHammer, FaUserCircle } from 'react-icons/fa';
 import { HiHome, HiInformationCircle, HiPhone, HiCollection } from 'react-icons/hi';
 
@@ -8,7 +11,7 @@ const navLinks = [
   { name: 'Home', path: '/', icon: HiHome },
   { name: 'Find Labour', path: '/find-labour', icon: FaSearch },
   { name: 'Categories', path: '/categories', icon: HiCollection },
-  { name: 'About', path: '/about', icon: HiInformationCircle },
+  { name: 'About Me', path: '/about', icon: HiInformationCircle },
   { name: 'Contact', path: '/contact', icon: HiPhone },
 ];
 
@@ -41,6 +44,17 @@ export default function Navbar() {
   const filteredLinks = isLabour
     ? navLinks.filter((l) => l.name !== 'Find Labour' && l.name !== 'Categories')
     : navLinks;
+
+  const { data: labourProfile } = useQuery({
+    queryKey: ['labour-nav', user?.uid],
+    queryFn: async () => {
+      const q = query(collection(db, 'labours'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), fbLimit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      return { id: snap.docs[0].id, ...snap.docs[0].data() };
+    },
+    enabled: isLabour && !!user,
+  });
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -162,9 +176,17 @@ export default function Navbar() {
                           transition={{ duration: 0.15 }}
                           className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2"
                         >
-                          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayUser?.displayName || displayUser?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{displayUser?.email || ''}</p>
+                          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 max-w-64">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{labourProfile?.name || displayUser?.displayName || displayUser?.name || 'User'}</p>
+                            {isLabour && labourProfile ? (
+                              <div className="mt-1 space-y-0.5">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{labourProfile.fatherName ? `S/o ${labourProfile.fatherName}` : ''}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{[labourProfile.area, labourProfile.city, labourProfile.state].filter(Boolean).join(', ')}</p>
+                                <p className="text-xs text-gray-400">{labourProfile.mobile}</p>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{displayUser?.email || ''}</p>
+                            )}
                           </div>
                           {displayUser?.role === 'labour' ? (
                             <Link to="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
