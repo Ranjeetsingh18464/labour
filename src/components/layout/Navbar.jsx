@@ -22,7 +22,10 @@ const overlayVariants = {
   closed: { opacity: 0, transition: { duration: 0.2 } },
 };
 
+import { useAuth } from '../../context/AuthContext';
+
 export default function Navbar() {
+  const { user, userData, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -32,8 +35,8 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  const isLoggedIn = false;
-  const user = null;
+  const isLoggedIn = !!user;
+  const displayUser = userData || user;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -142,7 +145,7 @@ export default function Navbar() {
                       className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
-                        {user?.displayName?.[0] || 'U'}
+                        {displayUser?.displayName?.[0] || displayUser?.name?.[0] || 'U'}
                       </div>
                       <FaChevronDown className={`text-xs text-gray-500 dark:text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
@@ -156,17 +159,17 @@ export default function Navbar() {
                           className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2"
                         >
                           <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.displayName || 'User'}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || ''}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayUser?.displayName || displayUser?.name || 'User'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{displayUser?.email || ''}</p>
                           </div>
                           <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
                             <FaUser className="text-gray-400" /> Profile
                           </Link>
-                          <Link to="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
+                          <Link to={displayUser?.role === 'admin' ? '/admin' : '/dashboard'} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setDropdownOpen(false)}>
                             <FaTachometerAlt className="text-gray-400" /> Dashboard
                           </Link>
                           <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                          <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => { setDropdownOpen(false); }}>
+                          <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => { setDropdownOpen(false); logout(); navigate('/'); }}>
                             <FaSignOutAlt /> Logout
                           </button>
                         </motion.div>
@@ -242,10 +245,10 @@ export default function Navbar() {
                     <NavLink to="/profile" className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
                       <FaUser className="text-lg" /> Profile
                     </NavLink>
-                    <NavLink to="/dashboard" className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
+                    <NavLink to={displayUser?.role === 'admin' ? '/admin' : '/dashboard'} className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
                       <FaTachometerAlt className="text-lg" /> Dashboard
                     </NavLink>
-                    <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setMobileOpen(false)}>
+                    <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => { setMobileOpen(false); logout(); navigate('/'); }}>
                       <FaSignOutAlt className="text-lg" /> Logout
                     </button>
                   </div>
