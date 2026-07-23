@@ -12,23 +12,32 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        try {
-          const docSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (docSnap.exists()) {
-            setUserData({ id: firebaseUser.uid, ...docSnap.data() });
+    let cancelled = false;
+    try {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (cancelled) return;
+        setUser(firebaseUser);
+        if (firebaseUser) {
+          try {
+            const docSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (!cancelled) {
+              if (docSnap.exists()) {
+                setUserData({ id: firebaseUser.uid, ...docSnap.data() });
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching user data:', err);
           }
-        } catch (err) {
-          console.error('Error fetching user data:', err);
+        } else {
+          setUserData(null);
         }
-      } else {
-        setUserData(null);
-      }
+        if (!cancelled) setLoading(false);
+      });
+      return () => { cancelled = true; unsubscribe(); };
+    } catch (err) {
+      console.error('Auth initialization error:', err);
       setLoading(false);
-    });
-    return unsubscribe;
+    }
   }, []);
 
   const login = async (email, password) => {
@@ -68,7 +77,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
