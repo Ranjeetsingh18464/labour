@@ -1,0 +1,1 @@
+function t(r){return r?(r!=null&&r.toDate?r.toDate():new Date(r)).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):""}function e(r){return r==null||isNaN(r)?"₹0":new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(r)}export{t as a,e as f};
