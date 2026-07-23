@@ -36,7 +36,8 @@ export default function Register() {
 
   const onSubmit = async (data) => {
     try {
-      await registerUser(data.email, data.password, { ...data, role: selectedRole });
+      const { password, confirmPassword, terms, ...cleanData } = data;
+      await registerUser(data.email, data.password, { ...cleanData, role: selectedRole });
       toast.success('Account created successfully!');
       if (selectedRole === 'labour') {
         navigate('/labour/register', { replace: true });
