@@ -37,6 +37,10 @@ export default function Navbar() {
 
   const isLoggedIn = !!user;
   const displayUser = userData || user;
+  const isLabour = displayUser?.role === 'labour';
+  const filteredLinks = isLabour
+    ? navLinks.filter((l) => l.name !== 'Find Labour' && l.name !== 'Categories')
+    : navLinks;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -91,7 +95,7 @@ export default function Navbar() {
               </Link>
 
               <div className="hidden lg:flex items-center gap-1">
-                {navLinks.map((link) => (
+                {filteredLinks.map((link) => (
                   <NavLink key={link.path} to={link.path} className={linkClass}>
                     <link.icon className="text-base" />
                     {link.name}
@@ -236,7 +240,7 @@ export default function Navbar() {
 
               <div className="p-4">
                 <div className="space-y-1">
-                  {navLinks.map((link) => (
+                  {filteredLinks.map((link) => (
                     <NavLink key={link.path} to={link.path} className={mobileLinkClass} onClick={() => setMobileOpen(false)}>
                       <link.icon className="text-lg" />
                       {link.name}
