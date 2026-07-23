@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FaSearch, FaFilter, FaEye, FaCheck, FaTimes, FaBan, FaShieldAlt, FaEdit, FaTrash, FaChevronDown, FaCheckDouble, FaUserCheck,
+  FaSearch, FaFilter, FaEye, FaCheck, FaTimes, FaBan, FaShieldAlt, FaEdit, FaTrash, FaChevronDown, FaCheckDouble, FaUserCheck, FaUsers,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/AdminLayout';
