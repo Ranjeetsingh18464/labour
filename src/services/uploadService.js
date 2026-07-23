@@ -8,7 +8,16 @@ export const uploadImage = async (file, path) => {
     const downloadURL = await getDownloadURL(snapshot.ref);
     return { url: downloadURL, path: snapshot.ref.fullPath };
   } catch (error) {
-    throw new Error(error.message);
+    console.error('Upload error:', error.code, error.message, error.customData?.serverResponse);
+    const msg =
+      error.code === 'storage/unauthorized'
+        ? 'Storage permission denied. Check Firebase Storage rules.'
+        : error.code === 'storage/canceled'
+        ? 'Upload was cancelled'
+        : error.code === 'storage/unknown'
+        ? `Storage error: ${error.customData?.serverResponse || 'Check CORS configuration on the bucket.'}`
+        : error.message;
+    throw new Error(msg);
   }
 };
 
