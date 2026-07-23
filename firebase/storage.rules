@@ -1,0 +1,64 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Profile photos - any authenticated user can read
+    match /profiles/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    // ID proofs - only the owner and admin can read
+    match /idproofs/{userId}/{fileName} {
+      allow read: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Certificates - only the owner and admin can read
+    match /certificates/{userId}/{fileName} {
+      allow read: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Gallery photos - public read
+    match /gallery/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Banner images - admin only
+    match /banners/{fileName} {
+      allow read: if true;
+      allow write, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
