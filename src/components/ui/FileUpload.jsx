@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { HiUpload, HiX, HiDocument } from 'react-icons/hi';
+import { useState, useRef, useEffect } from 'react';
+import { HiUpload, HiX, HiDocument, HiPhotograph } from 'react-icons/hi';
 
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
@@ -18,6 +18,18 @@ export default function FileUpload({
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
+  const [thumbnails, setThumbnails] = useState({});
+
+  useEffect(() => {
+    const urls = {};
+    currentFiles.forEach((file, i) => {
+      if (file instanceof File && file.type?.startsWith('image/')) {
+        urls[i] = URL.createObjectURL(file);
+      }
+    });
+    setThumbnails(urls);
+    return () => { Object.values(urls).forEach((u) => URL.revokeObjectURL(u)); };
+  }, [currentFiles]);
 
   const handleFiles = (files) => {
     setError('');
@@ -111,20 +123,28 @@ export default function FileUpload({
 
       {currentFiles.length > 0 && (
         <ul className="mt-3 space-y-2">
-          {currentFiles.map((file, idx) => (
-            <li
-              key={idx}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm"
-            >
-              <HiDocument className="text-gray-400 shrink-0" size={18} />
-              <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
-                {file.name || file}
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                {file.size ? formatSize(file.size) : ''}
-              </span>
-            </li>
-          ))}
+          {currentFiles.map((file, idx) => {
+            const isImage = file instanceof File && file.type?.startsWith('image/');
+            const thumb = thumbnails[idx];
+            return (
+              <li
+                key={idx}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm"
+              >
+                {isImage && thumb ? (
+                  <img src={thumb} alt={file.name} className="w-10 h-10 rounded object-cover shrink-0" />
+                ) : (
+                  <HiDocument className="text-gray-400 shrink-0" size={18} />
+                )}
+                <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
+                  {file.name || file}
+                </span>
+                <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                  {file.size ? formatSize(file.size) : ''}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
