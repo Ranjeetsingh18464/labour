@@ -5,6 +5,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import AdminLayout from './components/layout/AdminLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 import { Spinner } from './components/ui';
 
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -75,6 +76,22 @@ const AdminRoute = ({ element }) => (
   </ProtectedRoute>
 );
 
+function DashboardRedirect() {
+  const { userData, loading } = useAuth();
+  if (loading) return <PageLoader />;
+  if (userData?.role === 'admin' || userData?.role === 'super-admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  return (
+    <PublicLayout>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold">My Dashboard</h1>
+        <p className="text-gray-500 mt-2">Dashboard coming soon for customers and labour accounts.</p>
+      </div>
+    </PublicLayout>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -93,6 +110,7 @@ export default function App() {
       <Route path="/category/:slug" element={<PublicRoute element={<CategoryDetail />} />} />
       <Route path="/booking/:labourId" element={<PublicRoute element={<BookingPage />} />} />
 
+      <Route path="/dashboard" element={<DashboardRedirect />} />
       <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />} />
       <Route path="/admin/labours" element={<AdminRoute element={<ManageLabours />} />} />
       <Route path="/admin/categories" element={<AdminRoute element={<ManageCategories />} />} />
