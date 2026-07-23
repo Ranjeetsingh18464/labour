@@ -105,7 +105,7 @@ export default function Login() {
               <p className="text-gray-500 dark:text-gray-400 text-sm">Sign in to your account</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
               <Input
                 label="Email Address"
                 name="email"

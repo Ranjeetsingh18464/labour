@@ -82,7 +82,7 @@ export default function ForgotPassword() {
                 No worries! Enter your email and we&apos;ll send you a reset link.
               </p>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
                 <Input
                   label="Email Address"
                   name="email"

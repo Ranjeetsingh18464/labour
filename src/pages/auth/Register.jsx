@@ -120,7 +120,7 @@ export default function Register() {
               <p className="text-gray-500 dark:text-gray-400 text-sm">Create your account</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
               <Input
                 label="Full Name"
                 name="name"
