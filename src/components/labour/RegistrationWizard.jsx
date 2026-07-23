@@ -776,9 +776,32 @@ export default function RegistrationWizard() {
     setStep(prev => Math.max(prev - 1, 1));
   };
 
+  const compressImage = (file, maxW = 1024, quality = 0.7) => {
+    if (!file || !file.type.startsWith('image/')) return file;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxW) { height *= maxW / width; width = maxW; }
+        if (height > maxW) { width *= maxW / height; height = maxW; }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) resolve(file);
+          resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadFile = async (file, path) => {
     if (!file) return null;
-    const result = await uploadImage(file, path);
+    const compressed = await compressImage(file);
+    const result = await uploadImage(compressed, path);
     return result.url;
   };
 
@@ -786,12 +809,17 @@ export default function RegistrationWizard() {
     setUploading(true);
     try {
       const filePath = `labours/${user.uid}`;
+
+      toast.loading('Uploading photos...', { id: 'upload-status' });
+
       const [profilePhoto, aadhaarFront, aadhaarBack, experienceCert] = await Promise.all([
         uploadFile(files.profilePhoto, `${filePath}/profile.jpg`),
         uploadFile(files.aadhaarFront, `${filePath}/aadhaar-front.jpg`),
         uploadFile(files.aadhaarBack, `${filePath}/aadhaar-back.jpg`),
         uploadFile(files.experienceCert, `${filePath}/experience-cert.pdf`),
       ]);
+
+      toast.loading('Saving profile...', { id: 'upload-status' });
 
       let additionalPhotoUrls = [];
       if (files.additionalPhotos?.length > 0) {
@@ -852,10 +880,10 @@ export default function RegistrationWizard() {
         updateLabour(created.id, { labourId })
       );
 
-      toast.success('Registration submitted successfully!');
+      toast.success('Registration submitted successfully!', { id: 'upload-status' });
       navigate('/labour/profile');
     } catch (error) {
-      toast.error(error.message || 'Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.', { id: 'upload-status' });
     } finally {
       setUploading(false);
     }
