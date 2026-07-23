@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import {
   FaUser, FaMapMarkerAlt, FaBriefcase, FaCogs, FaCamera,
   FaInfoCircle, FaPhoneAlt, FaCheckDouble, FaArrowLeft,
@@ -200,7 +202,20 @@ function PersonalDetails({ register, errors, setValue, watch }) {
   );
 }
 
-function AddressStep({ register, errors }) {
+function AddressStep({ register, errors, setValue, watch }) {
+  const [adding, setAdding] = useState(null);
+
+  const handleAdd = async (field, value) => {
+    if (!value || !value.trim()) return;
+    const col = field === 'city' ? 'cities' : 'areas';
+    try {
+      await addDoc(collection(db, col), { name: value.trim(), status: 'active' });
+      toast.success(`${field === 'city' ? 'City' : 'Area'} added`);
+    } catch {
+      toast.error(`Failed to add ${field}`);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Input label="House/Flat No" name="houseNo" placeholder="House/Flat number" required
@@ -210,12 +225,32 @@ function AddressStep({ register, errors }) {
         {...register('street')} icon={FaRoad} />
       <Input label="Landmark" name="landmark" placeholder="Nearby landmark"
         {...register('landmark')} icon={FaMapPin} />
-      <Select label="Area" name="area" options={AREA_OPTIONS} placeholder="Select Area" required
-        {...register('area', { required: 'Area is required' })}
-        error={errors.area?.message} />
-      <Select label="City" name="city" options={[{ value: '', label: 'Select City' }, ...CITY_OPTIONS.map(c => ({ value: c, label: c }))]} required
-        {...register('city', { required: 'City is required' })}
-        error={errors.city?.message} />
+      <div className="relative">
+        <Input label="Area" name="area" placeholder="Enter area name" required
+          {...register('area', { required: 'Area is required' })}
+          error={errors.area?.message} />
+        <button
+          type="button"
+          onClick={() => { handleAdd('area', watch('area')); }}
+          className="absolute right-2 top-[38px] p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+          title="Add area"
+        >
+          <FaPlus size={14} />
+        </button>
+      </div>
+      <div className="relative">
+        <Input label="City" name="city" placeholder="Enter city name" required
+          {...register('city', { required: 'City is required' })}
+          error={errors.city?.message} />
+        <button
+          type="button"
+          onClick={() => { handleAdd('city', watch('city')); }}
+          className="absolute right-2 top-[38px] p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+          title="Add city"
+        >
+          <FaPlus size={14} />
+        </button>
+      </div>
       <Input label="District" name="district" placeholder="District"
         {...register('district')} icon={FaCity} />
       <Select label="State" name="state" options={[{ value: '', label: 'Select State' }, ...INDIAN_STATES.map(s => ({ value: s, label: s }))]} required
